@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบแผนชีวิต 1 ปี : MCUKS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        buddhist: {
+                            gold: '#D4AF37',
+                            brown: '#6B3F12',
+                            light: '#FFFAF0',
+                            card: '#FFFFFF',
+                            red: '#8B0000'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Sarabun', 'Prompt', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #FAFAF8;
+            color: #4A3B2C;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 80px; /* Space for bottom nav */
+        }
+        h1, h2, h3, h4, .font-prompt { font-family: 'Prompt', sans-serif; }
+        
+        /* CSS กำหนดพิเศษตาม Prompt */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: linear-gradient(135deg, #fffaf0, #f8e8c8);
+            border-radius: 24px;
+            padding: 18px;
+            box-shadow: 0 8px 24px rgba(120, 80, 20, 0.12);
+            margin-bottom: 18px;
+            border: 1px solid rgba(180, 140, 60, 0.25);
+        }
+        .owner-photo {
+            width: 82px;
+            height: 82px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #d4af37;
+            box-shadow: 0 4px 14px rgba(120, 80, 20, 0.22);
+            background: #ffffff;
+        }
+        .profile-text h1 {
+            font-size: 20px;
+            margin: 0 0 6px;
+            color: #6b3f12;
+            font-weight: 700;
+        }
+        .profile-text p {
+            margin: 2px 0;
+            font-size: 13px;
+            color: #6d5a3a;
+            line-height: 1.45;
+        }
+        @media (max-width: 480px) {
+            .profile-header {
+                align-items: flex-start;
+                padding: 14px;
+                gap: 12px;
+            }
+            .owner-photo {
+                width: 68px;
+                height: 68px;
+            }
+            .profile-text h1 { font-size: 17px; }
+            .profile-text p { font-size: 12px; }
+        }
+
+        /* App Specific styles */
+        .view-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+            display: flex; justify-content: space-around;
+            padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+            z-index: 50;
+            border-top: 1px solid #eee;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: #9CA3AF; font-size: 11px; text-decoration: none;
+            transition: all 0.2s; cursor: pointer;
+        }
+        .nav-item.active { color: #D4AF37; }
+        .nav-item i { font-size: 24px; margin-bottom: 2px; }
+        
+        .card {
+            background: white; border-radius: 16px; padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 16px;
+            border: 1px solid rgba(212, 175, 55, 0.1);
+        }
+        
+        /* Checkbox styling */
+        .chk-container { display: flex; align-items: flex-start; margin-bottom: 12px; cursor: pointer; }
+        .chk-container input { display: none; }
+        .checkmark {
+            width: 24px; height: 24px; border: 2px solid #D4AF37; border-radius: 6px;
+            margin-right: 12px; display: flex; justify-content: center; align-items: center;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .chk-container input:checked ~ .checkmark { background-color: #D4AF37; }
+        .chk-container input:checked ~ .checkmark:after {
+            content: '\2714'; color: white; font-size: 16px; font-weight: bold;
+        }
+        .chk-text { font-size: 15px; color: #4A3B2C; padding-top: 2px; }
+        .chk-container input:checked ~ .chk-text { color: #8C8C8C; text-decoration: line-through; }
+
+        .form-input {
+            width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 12px;
+            margin-top: 4px; font-family: 'Sarabun', sans-serif; font-size: 16px;
+            background-color: #F9FAFB;
+        }
+        .form-input:focus { outline: none; border-color: #D4AF37; background-color: #FFF; }
+        .btn-primary {
+            background: #D4AF37; color: white; width: 100%; padding: 14px;
+            border-radius: 12px; font-weight: 600; font-family: 'Prompt', sans-serif;
+            text-align: center; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+            transition: all 0.2s; cursor: pointer;
+        }
+        .btn-primary:active { transform: scale(0.98); }
+        
+        #toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #4CAF50; color: white; padding: 12px 24px; border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1000; display: none;
+            font-family: 'Prompt', sans-serif; font-size: 14px;
+        }
+        #alert-modal { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Toast Notification -->
+    <div id="toast">บันทึกข้อมูลสำเร็จ</div>
+
+    <!-- Alert Modal (IF Risk) -->
+    <div id="alert-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <div class="text-red-500 text-center mb-4"><i class="ph-fill ph-warning-circle text-5xl"></i></div>
+            <h3 class="font-prompt text-lg font-bold text-center text-gray-800 mb-2">แจ้งเตือนสุขภาพ</h3>
+            <p class="text-sm text-gray-600 text-center mb-6 leading-relaxed">
+                วันนี้ร่างกายอาจยังไม่พร้อมสำหรับ IF เข้มงวด ควรผ่อนเป็น 12/12 ดื่มน้ำให้เพียงพอ พักผ่อน และดูแลสุขภาพเป็นหลัก หากมีอาการต่อเนื่องควรปรึกษาแพทย์หรือผู้เชี่ยวชาญ
+            </p>
+            <button onclick="document.getElementById('alert-modal').style.display='none'" class="btn-primary w-full !bg-red-500 !shadow-none">รับทราบ</button>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div class="max-w-md mx-auto relative min-h-screen pt-4 px-4 pb-24">
+        
+        <!-- Header (Profile) -->
+        <div class="profile-header" id="app-header">
+            <img src="<?= config.LOGO_URL ?>" onerror="this.onerror=null; this.src='https://lh3.googleusercontent.com/d/1Oes1htLwaNV_qE7eJkuSlPMHqXqJJ9ec';" alt="Profile" class="owner-photo">
+            <div class="profile-text">
+                <h1>ระบบแผนชีวิต 1 ปี</h1>
+                <p><?= config.USER_NAME ?></p>
+                <p class="text-xs opacity-80"><?= config.TEMPLE_NAME ?></p>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: WELCOME ================= -->
+        <div id="view-welcome" class="view-section active text-center mt-10">
+            <img src="<?= config.LOGO_URL ?>" onerror="this.onerror=null; this.src='https://lh3.googleusercontent.com/d/1Oes1htLwaNV_qE7eJkuSlPMHqXqJJ9ec';" class="w-32 h-32 rounded-full mx-auto mb-6 border-4 border-buddhist-gold shadow-lg object-cover">
+            <h2 class="font-prompt text-2xl font-bold text-buddhist-brown mb-2">ธรรมวินัยเป็นหลัก<br>งานมีระบบ ใจมีสติ</h2>
+            <p class="text-sm text-gray-500 mb-8 px-4">
+                โดย <?= config.USER_NAME ?><br>
+                <?= config.ORGANIZATION_NAME ?><br>
+                <?= config.UNIVERSITY_NAME ?>
+            </p>
+            <button onclick="switchView('dashboard')" class="btn-primary flex items-center justify-center gap-2">
+                <i class="ph ph-sign-in"></i> เข้าสู่ระบบแผนชีวิตวันนี้
+            </button>
+        </div>
+
+        <!-- ================= VIEW: DASHBOARD ================= -->
+        <div id="view-dashboard" class="view-section">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <p class="text-xs text-gray-500">วันนี้</p>
+                    <h2 class="font-prompt text-xl font-bold text-buddhist-brown" id="ds-date">กำลังโหลด...</h2>
+                </div>
+                <span id="ds-badge" class="bg-buddhist-light text-buddhist-brown border border-buddhist-gold px-3 py-1 rounded-full text-xs font-bold">วันทำงาน</span>
+            </div>
+
+            <div class="card bg-gradient-to-br from-buddhist-gold to-yellow-600 text-white border-none relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-sm opacity-90 mb-1">ความคืบหน้าวันนี้</p>
+                    <div class="flex items-end gap-2 mb-3">
+                        <span class="text-4xl font-prompt font-bold" id="ds-score">0</span>
+                        <span class="text-lg opacity-80 mb-1">%</span>
+                    </div>
+                    <!-- Progress bar -->
+                    <div class="w-full bg-black/20 rounded-full h-2 mb-2">
+                        <div class="bg-white rounded-full h-2 transition-all duration-1000" id="ds-progress" style="width: 0%"></div>
+                    </div>
+                    <p class="text-xs italic">"วันนี้ค่อย ๆ ทำให้ดีที่สุด ไม่ต้องสมบูรณ์แบบ แต่ขอให้ต่อเนื่อง"</p>
+                </div>
+                <i class="ph-fill ph-yin-yang absolute -right-6 -bottom-6 text-9xl text-white opacity-10"></i>
+            </div>
+
+            <!-- วันพระ Alert -->
+            <div id="ds-wanphra-alert" class="hidden mb-4 bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-xl flex items-center gap-3">
+                <i class="ph-fill ph-moon-stars text-2xl text-yellow-500"></i>
+                <div class="text-sm">
+                    <strong class="block font-prompt">วันนี้วันพระ</strong>
+                    <span id="ds-wanphra-text"></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="card p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform" onclick="switchView('checklist')">
+                    <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mb-2 text-orange-500">
+                        <i class="ph-fill ph-list-checks text-2xl"></i>
+                    </div>
+                    <span class="font-prompt text-sm font-semibold text-gray-700">เช็กลิสต์ชีวิต</span>
+                </div>
+                <div class="card p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform" onclick="switchView('health')">
+                    <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-2 text-green-500">
+                        <i class="ph-fill ph-heartbeat text-2xl"></i>
+                    </div>
+                    <span class="font-prompt text-sm font-semibold text-gray-700">สุขภาพ & IF</span>
+                </div>
+                <div class="card p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform" onclick="switchView('work')">
+                    <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-2 text-blue-500">
+                        <i class="ph-fill ph-briefcase text-2xl"></i>
+                    </div>
+                    <span class="font-prompt text-sm font-semibold text-gray-700">งาน & AI</span>
+                </div>
+                <div class="card p-4 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform" onclick="switchView('mind')">
+                    <div class="w-12 h-12 bg-pink-50 rounded-full flex items-center justify-center mb-2 text-pink-500">
+                        <i class="ph-fill ph-flower-lotus text-2xl"></i>
+                    </div>
+                    <span class="font-prompt text-sm font-semibold text-gray-700">บันทึกใจ</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3 class="font-prompt font-semibold text-buddhist-brown mb-3 border-b-2 border-buddhist-light pb-2">หลักชีวิต</h3>
+                <ul class="text-sm space-y-2 text-gray-600">
+                    <li class="flex gap-2"><i class="ph-fill ph-check-circle text-buddhist-gold"></i> ทำวัตรเช้า <?= (config.MORNING_CHANT_TIME instanceof Date) ? Utilities.formatDate(config.MORNING_CHANT_TIME, 'Asia/Bangkok', 'HH:mm') : config.MORNING_CHANT_TIME ?> น.</li>
+                    <li class="flex gap-2"><i class="ph-fill ph-check-circle text-buddhist-gold"></i> ทำวัตรเย็น <?= (config.EVENING_CHANT_TIME instanceof Date) ? Utilities.formatDate(config.EVENING_CHANT_TIME, 'Asia/Bangkok', 'HH:mm') : config.EVENING_CHANT_TIME ?> น.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: CHECKLIST ================= -->
+        <div id="view-checklist" class="view-section">
+            <h2 class="font-prompt text-xl font-bold text-buddhist-brown mb-4 flex items-center gap-2">
+                <i class="ph ph-list-checks"></i> เช็กลิสต์ประจำวัน
+            </h2>
+            
+            <form id="checklist-form">
+                <!-- ธรรมวินัย -->
+                <div class="card">
+                    <h3 class="font-prompt font-semibold text-orange-600 mb-3 flex items-center gap-2"><i class="ph-fill ph-hands-praying"></i> ธรรมวินัย</h3>
+                    <div id="chk-dhamma-container"></div>
+                </div>
+                
+                <!-- สุขภาพ & IF -->
+                <div class="card">
+                    <h3 class="font-prompt font-semibold text-green-600 mb-3 flex items-center gap-2"><i class="ph-fill ph-apple-logo"></i> สุขภาพ & IF</h3>
+                    <div id="chk-health-container"></div>
+                </div>
+
+                <!-- งาน & การเงิน -->
+                <div class="card">
+                    <h3 class="font-prompt font-semibold text-blue-600 mb-3 flex items-center gap-2"><i class="ph-fill ph-laptop"></i> งานและการเงิน</h3>
+                    <div id="chk-work-container"></div>
+                </div>
+
+                <!-- จิตใจ -->
+                <div class="card">
+                    <h3 class="font-prompt font-semibold text-pink-600 mb-3 flex items-center gap-2"><i class="ph-fill ph-heart"></i> จิตใจ</h3>
+                    <div id="chk-mind-container"></div>
+                </div>
+
+                <button type="button" onclick="submitChecklist()" class="btn-primary mt-4 mb-4" id="btn-save-chk">
+                    บันทึกเช็กลิสต์
+                </button>
+            </form>
+        </div>
+
+        <!-- ================= VIEW: HEALTH & IF ================= -->
+        <div id="view-health" class="view-section">
+            <h2 class="font-prompt text-xl font-bold text-green-700 mb-4 flex items-center gap-2">
+                <i class="ph ph-heartbeat"></i> บันทึกสุขภาพ & IF
+            </h2>
+            <div class="card">
+                <form id="health-form" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-sm font-semibold text-gray-600">น้ำหนัก (กก.)</label>
+                            <input type="number" step="0.1" name="weight" class="form-input" placeholder="เช่น 65.5">
+                        </div>
+                        <div>
+                            <label class="text-sm font-semibold text-gray-600">รอบเอว (นิ้ว)</label>
+                            <input type="number" step="0.1" name="waist" class="form-input" placeholder="เช่น 32">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">การนอนหลับ (ชั่วโมง)</label>
+                        <input type="number" step="0.5" name="sleepHours" class="form-input" placeholder="เช่น 7">
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">รูปแบบ IF วันนี้</label>
+                        <select name="ifType" class="form-input">
+                            <option value="12/12">12/12 (กิน 12 งด 12)</option>
+                            <option value="14/10">14/10 (กิน 10 งด 14)</option>
+                            <option value="16/8">16/8 (กิน 8 งด 16)</option>
+                            <option value="งดหลัง 19.00">งดมื้อดึกหลัง 19.00 น.</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-sm font-semibold text-gray-600">เวลาเริ่มกิน</label>
+                            <input type="time" name="eatStart" class="form-input">
+                        </div>
+                        <div>
+                            <label class="text-sm font-semibold text-gray-600">เวลาหยุดกิน</label>
+                            <input type="time" name="eatEnd" class="form-input">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600 text-red-600">อาการร่างกาย (สำคัญ)</label>
+                        <select name="bodyStatus" class="form-input border-red-200 bg-red-50" onchange="checkRisk(this.value)">
+                            <option value="ปกติ">ปกติ แข็งแรงดี</option>
+                            <option value="เหนื่อย">เหนื่อยล้าเล็กน้อย</option>
+                            <option value="หิวมาก">หิวมาก (เสี่ยงตบะแตก)</option>
+                            <option value="หน้ามืด">หน้ามืด / วิงเวียน</option>
+                            <option value="อ่อนแรง">อ่อนแรง / ไม่มีแรง</option>
+                            <option value="ใจสั่น">ใจสั่น</option>
+                            <option value="นอนไม่หลับ">นอนไม่หลับ</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">หากมีอาการผิดปกติ ระบบจะแนะนำให้ลดความเข้มข้นลง</p>
+                    </div>
+
+                    <button type="button" onclick="submitHealth()" class="btn-primary !bg-green-600" id="btn-save-health">บันทึกข้อมูล</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: WORK ================= -->
+        <div id="view-work" class="view-section">
+            <h2 class="font-prompt text-xl font-bold text-blue-700 mb-4 flex items-center gap-2">
+                <i class="ph ph-briefcase"></i> บันทึกงาน & AI
+            </h2>
+            <div class="card">
+                <form id="work-form" class="space-y-4">
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">ประเภทงาน</label>
+                        <select name="category" class="form-input">
+                            <option value="สารบรรณ">งานสารบรรณ</option>
+                            <option value="ทะเบียน">งานทะเบียน</option>
+                            <option value="วัดผล">งานวัดผล</option>
+                            <option value="ประชาสัมพันธ์">ประชาสัมพันธ์</option>
+                            <option value="โครงการ">งานโครงการ</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">งานสำคัญวันนี้ที่สำเร็จ</label>
+                        <textarea name="completedTask" rows="2" class="form-input" placeholder="ระบุงานที่ทำเสร็จ"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">การใช้ AI ช่วยงาน</label>
+                        <textarea name="aiUsed" rows="2" class="form-input border-purple-200 bg-purple-50" placeholder="วันนี้ใช้ AI (เช่น ChatGPT/Gemini) ช่วยงานอะไรบ้าง?"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-gray-600">งานค้างที่ต้องยกไปพรุ่งนี้</label>
+                        <textarea name="pendingTask" rows="2" class="form-input" placeholder="ระบุงานที่ค้าง"></textarea>
+                    </div>
+                    <button type="button" onclick="submitWork()" class="btn-primary !bg-blue-600" id="btn-save-work">บันทึกงาน</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: MIND ================= -->
+        <div id="view-mind" class="view-section">
+            <h2 class="font-prompt text-xl font-bold text-pink-700 mb-4 flex items-center gap-2">
+                <i class="ph ph-flower-lotus"></i> ทบทวนใจก่อนนอน
+            </h2>
+            <div class="card bg-pink-50/50 border-pink-100">
+                <form id="mind-form" class="space-y-4">
+                    <div>
+                        <label class="text-sm font-semibold text-pink-800">1. สิ่งใดที่ควรขอบคุณในวันนี้?</label>
+                        <textarea name="gratitude" rows="2" class="form-input bg-white"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-pink-800">2. วันนี้เหนื่อยหรือกังวลเรื่องอะไร?</label>
+                        <textarea name="tiredThing" rows="2" class="form-input bg-white"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-pink-800">3. สิ่งที่ควร "วาง" ลงก่อนนอน</label>
+                        <textarea name="letGoThing" rows="2" class="form-input bg-white"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-pink-800">4. พรุ่งนี้ควรโฟกัสหรือระวังเรื่องอะไร?</label>
+                        <textarea name="tomorrowFocus" rows="2" class="form-input bg-white"></textarea>
+                    </div>
+                    <button type="button" onclick="submitMind()" class="btn-primary !bg-pink-600" id="btn-save-mind">บันทึกความรู้สึก</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: SETTINGS ================= -->
+        <div id="view-settings" class="view-section">
+            <h2 class="font-prompt text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                <i class="ph ph-gear"></i> ตั้งค่าระบบ
+            </h2>
+            <div class="card">
+                <p class="text-xs text-gray-500 mb-4">การตั้งค่าส่วนนี้จะถูกบันทึกลงในชีต Settings</p>
+                <form id="settings-form" class="space-y-4">
+                    <div>
+                        <label class="text-sm font-semibold">ชื่อผู้ใช้</label>
+                        <input type="text" name="USER_NAME" class="form-input" value="<?= config.USER_NAME ?>">
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold">เวลาทำวัตรเช้า</label>
+                        <input type="time" name="MORNING_CHANT_TIME" class="form-input" value="<?= (config.MORNING_CHANT_TIME instanceof Date) ? Utilities.formatDate(config.MORNING_CHANT_TIME, 'Asia/Bangkok', 'HH:mm') : config.MORNING_CHANT_TIME ?>">
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold">เวลาทำวัตรเย็น</label>
+                        <input type="time" name="EVENING_CHANT_TIME" class="form-input" value="<?= (config.EVENING_CHANT_TIME instanceof Date) ? Utilities.formatDate(config.EVENING_CHANT_TIME, 'Asia/Bangkok', 'HH:mm') : config.EVENING_CHANT_TIME ?>">
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold">URL รูปโปรไฟล์ (Drive Image)</label>
+                        <input type="text" name="LOGO_URL" class="form-input" value="<?= config.LOGO_URL ?>">
+                    </div>
+                    <button type="button" onclick="submitSettings()" class="btn-primary !bg-gray-800" id="btn-save-settings">บันทึกการตั้งค่า</button>
+                </form>
+            </div>
+        </div>
+
+    </div> <!-- End App Container -->
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')">
+            <i class="ph-fill ph-squares-four"></i><span>หน้าแรก</span>
+        </a>
+        <a class="nav-item" id="nav-checklist" onclick="switchView('checklist')">
+            <i class="ph-fill ph-list-checks"></i><span>เช็กลิสต์</span>
+        </a>
+        <a class="nav-item" id="nav-health" onclick="switchView('health')">
+            <i class="ph-fill ph-heartbeat"></i><span>สุขภาพ</span>
+        </a>
+        <a class="nav-item" id="nav-work" onclick="switchView('work')">
+            <i class="ph-fill ph-briefcase"></i><span>งาน</span>
+        </a>
+        <a class="nav-item" id="nav-settings" onclick="switchView('settings')">
+            <i class="ph-fill ph-gear"></i><span>ตั้งค่า</span>
+        </a>
+    </nav>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // ข้อมูล Checklist พื้นฐาน
+        const checklists = {
+            dhamma: [
+                "ทำวัตรเช้า <?= (config.MORNING_CHANT_TIME instanceof Date) ? Utilities.formatDate(config.MORNING_CHANT_TIME, 'Asia/Bangkok', 'HH:mm') : config.MORNING_CHANT_TIME ?> น.",
+                "ทำวัตรเย็น <?= (config.EVENING_CHANT_TIME instanceof Date) ? Utilities.formatDate(config.EVENING_CHANT_TIME, 'Asia/Bangkok', 'HH:mm') : config.EVENING_CHANT_TIME ?> น.",
+                "เจริญสติ / นั่งเงียบ 10 นาที",
+                "อ่านธรรมะ / ฟังธรรม",
+                "ทบทวนใจก่อนนอน 3 นาที"
+            ],
+            health: [
+                "งดอาหารตามเวลาที่กำหนด (IF)",
+                "ไม่ดื่มน้ำหวานช่วงอดอาหาร",
+                "ดื่มน้ำเปล่าเพียงพอ",
+                "เดินหรือขยับร่างกาย 20–30 นาที",
+                "นอนเป็นเวลา"
+            ],
+            work: [
+                "ใช้เช็กลิสต์งานประจำ",
+                "ทำงานสำคัญสำเร็จ 1 เรื่อง",
+                "เคลียร์งานค้าง 1 เรื่อง",
+                "ใช้ AI ช่วยงานอย่างน้อย 1 งาน",
+                "จดรายจ่ายวันนี้ / แยกความจำเป็น"
+            ],
+            mind: [
+                "ขอบคุณใครสักคน",
+                "เขียนสิ่งที่ควรวางก่อนนอน",
+                "ทบทวนชีวิตก่อนนอน"
+            ]
+        };
+
+        const wanPhraItems = [
+            "ร่วมกิจกรรมวันพระของวัด",
+            "สำรวมกาย วาจา ใจ เป็นพิเศษ",
+            "ลดงานออนไลน์ที่ไม่จำเป็น",
+            "แผ่เมตตา"
+        ];
+
+        // ฟังก์ชันเมื่อโหลดหน้าเว็บ
+        document.addEventListener('DOMContentLoaded', () => {
+            renderChecklists(false); // Render initial checklist
+            loadDashboardData();
+            
+            // ซ่อน Header ในหน้าแรก
+            document.getElementById('app-header').style.display = 'none';
+        });
+
+        // 1. ระบบนำทาง (Navigation/SPA)
+        function switchView(viewId) {
+            // ซ่อนทุกหน้า
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            // ลบ active จาก nav ทุกตัว
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // แสดงหน้าเป้าหมาย
+            document.getElementById(`view-${viewId}`).classList.add('active');
+            
+            // จัดการ Header
+            if(viewId === 'welcome') {
+                document.getElementById('app-header').style.display = 'none';
+            } else {
+                document.getElementById('app-header').style.display = 'flex';
+                // Active nav item
+                if(document.getElementById(`nav-${viewId}`)) {
+                    document.getElementById(`nav-${viewId}`).classList.add('active');
+                }
+            }
+            window.scrollTo(0, 0);
+        }
+
+        // 2. โหลดข้อมูล Dashboard จาก Backend
+        function loadDashboardData() {
+            if(typeof google === 'undefined') return; // เผื่อรันใน Local
+            
+            google.script.run.withSuccessHandler(function(res) {
+                // อัปเดตวันที่
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                const thaiDate = new Date(res.date).toLocaleDateString('th-TH', options);
+                document.getElementById('ds-date').innerText = thaiDate;
+
+                // อัปเดตสถานะวันพระ
+                if(res.isWanPhra) {
+                    document.getElementById('ds-wanphra-alert').classList.remove('hidden');
+                    document.getElementById('ds-wanphra-text').innerText = res.wanPhraText;
+                    document.getElementById('ds-badge').innerText = 'วันพระ';
+                    document.getElementById('ds-badge').className = 'bg-yellow-100 text-yellow-800 border border-yellow-300 px-3 py-1 rounded-full text-xs font-bold';
+                    renderChecklists(true); // เพิ่มข้อวันพระ
+                }
+
+                // อัปเดต Score
+                document.getElementById('ds-score').innerText = res.score;
+                document.getElementById('ds-progress').style.width = res.score + '%';
+
+            }).getTodayDashboardData();
+        }
+
+        // 3. วาดฟอร์ม Checklist อัตโนมัติ
+        function renderChecklists(isWanPhra) {
+            const generateHTML = (cat, items) => items.map((item, i) => `
+                <label class="chk-container">
+                    <input type="checkbox" name="chk_${cat}[]" value="${item}">
+                    <span class="checkmark"></span>
+                    <span class="chk-text">${item}</span>
+                </label>
+            `).join('');
+
+            document.getElementById('chk-dhamma-container').innerHTML = generateHTML('dhamma', checklists.dhamma) + (isWanPhra ? generateHTML('wanphra', wanPhraItems) : '');
+            document.getElementById('chk-health-container').innerHTML = generateHTML('health', checklists.health);
+            document.getElementById('chk-work-container').innerHTML = generateHTML('work', checklists.work);
+            document.getElementById('chk-mind-container').innerHTML = generateHTML('mind', checklists.mind);
+        }
+
+        // 4. ระบบแจ้งเตือนสุขภาพทันที (Frontend)
+        function checkRisk(val) {
+            const risky = ['หน้ามืด', 'อ่อนแรง', 'ใจสั่น', 'หิวมาก', 'นอนไม่หลับ'];
+            if(risky.includes(val)) {
+                document.getElementById('alert-modal').style.display = 'flex';
+            }
+        }
+
+        // 5. แจ้งเตือน Toast
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.background = isError ? '#F44336' : '#4CAF50';
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        // 6. ฟังก์ชัน Submit ข้อมูลไปยัง Backend
+        function getTodayString() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function submitChecklist() {
+            let btn = document.getElementById('btn-save-chk');
+            btn.innerHTML = '<i class="ph-fill ph-spinner animate-spin"></i> กำลังบันทึก...';
+            btn.disabled = true;
+
+            const date = getTodayString();
+            const items = [];
+            document.querySelectorAll('#checklist-form input[type="checkbox"]').forEach(el => {
+                items.push({
+                    category: el.name.replace('chk_', '').replace('[]', ''),
+                    name: el.value,
+                    isDone: el.checked
+                });
+            });
+
+            if(typeof google !== 'undefined') {
+                google.script.run.withSuccessHandler(res => {
+                    showToast(res.message);
+                    btn.innerHTML = 'บันทึกเช็กลิสต์'; btn.disabled = false;
+                    loadDashboardData(); // รีเฟรชเปอร์เซ็นต์
+                }).withFailureHandler(err => {
+                    showToast('เกิดข้อผิดพลาด: ' + err.message, true);
+                    btn.innerHTML = 'บันทึกเช็กลิสต์'; btn.disabled = false;
+                }).saveChecklistData(date, items);
+            }
+        }
+
+        function submitHealth() {
+            const form = document.getElementById('health-form');
+            const data = {
+                date: getTodayString(),
+                weight: form.weight.value,
+                waist: form.waist.value,
+                sleepHours: form.sleepHours.value,
+                ifType: form.ifType.value,
+                eatStart: form.eatStart.value,
+                eatEnd: form.eatEnd.value,
+                bodyStatus: form.bodyStatus.value,
+                ifSuccess: 'Yes', // Simplified for UX
+                sleepQuality: 'ปกติ',
+                walkMinutes: 30,
+                sweetDrink: 'No',
+                waterEnough: 'Yes'
+            };
+
+            let btn = document.getElementById('btn-save-health');
+            btn.innerText = 'กำลังบันทึก...'; btn.disabled = true;
+
+            if(typeof google !== 'undefined') {
+                google.script.run.withSuccessHandler(res => {
+                    showToast(res.message);
+                    form.reset();
+                    btn.innerText = 'บันทึกข้อมูล'; btn.disabled = false;
+                    switchView('dashboard');
+                }).saveHealthLog(data);
+            }
+        }
+
+        function submitWork() {
+            const form = document.getElementById('work-form');
+            const data = {
+                date: getTodayString(),
+                category: form.category.value,
+                completedTask: form.completedTask.value,
+                aiUsed: form.aiUsed.value,
+                pendingTask: form.pendingTask.value,
+                mainTask: 'บันทึกรายวัน'
+            };
+            let btn = document.getElementById('btn-save-work');
+            btn.innerText = 'กำลังบันทึก...'; btn.disabled = true;
+            if(typeof google !== 'undefined') {
+                google.script.run.withSuccessHandler(res => {
+                    showToast(res.message);
+                    form.reset();
+                    btn.innerText = 'บันทึกงาน'; btn.disabled = false;
+                    switchView('dashboard');
+                }).saveWorkLog(data);
+            }
+        }
+
+        function submitMind() {
+            const form = document.getElementById('mind-form');
+            const data = {
+                date: getTodayString(),
+                gratitude: form.gratitude.value,
+                tiredThing: form.tiredThing.value,
+                letGoThing: form.letGoThing.value,
+                tomorrowFocus: form.tomorrowFocus.value,
+                goodThing: '', kindness: ''
+            };
+            let btn = document.getElementById('btn-save-mind');
+            btn.innerText = 'กำลังบันทึก...'; btn.disabled = true;
+            if(typeof google !== 'undefined') {
+                google.script.run.withSuccessHandler(res => {
+                    showToast(res.message);
+                    form.reset();
+                    btn.innerText = 'บันทึกความรู้สึก'; btn.disabled = false;
+                    switchView('dashboard');
+                }).saveMindLog(data);
+            }
+        }
+
+        function submitSettings() {
+            const form = document.getElementById('settings-form');
+            const data = {
+                USER_NAME: form.USER_NAME.value,
+                MORNING_CHANT_TIME: form.MORNING_CHANT_TIME.value,
+                EVENING_CHANT_TIME: form.EVENING_CHANT_TIME.value,
+                LOGO_URL: form.LOGO_URL.value
+            };
+            let btn = document.getElementById('btn-save-settings');
+            btn.innerText = 'กำลังบันทึก...'; btn.disabled = true;
+            if(typeof google !== 'undefined') {
+                google.script.run.withSuccessHandler(res => {
+                    showToast(res.message);
+                    btn.innerText = 'บันทึกการตั้งค่า'; btn.disabled = false;
+                    setTimeout(() => location.reload(), 1500); // รีโหลดหน้าเพื่อดึงค่าใหม่
+                }).saveSettings(data);
+            }
+        }
+    </script>
+</body>
+</html>
